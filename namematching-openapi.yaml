@@ -1,0 +1,737 @@
+---
+swagger: "2.0"
+info:
+  description: "A taxonomy service that maps scientific name queries onto taxon concepts"
+  version: "1.7"
+  title: "ALA Namematching API"
+  contact:
+    url: "https://ala.org.au"
+    email: "support@ala.org.au"
+tags:
+- name: "Taxonomy search"
+schemes:
+- "http"
+paths:
+  /api/getByTaxonID:
+    get:
+      tags:
+      - "Taxonomy search"
+      summary: "Get taxon information by taxon identifier."
+      description: ""
+      operationId: "get"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "taxonID"
+        in: "query"
+        description: "The unique taxon identifier"
+        required: true
+        type: "string"
+        x-example: "https://id.biodiversity.org.au/node/apni/2908670"
+      - name: "follow"
+        in: "query"
+        description: "Follow synonyms to the accepted taxon"
+        required: false
+        type: "boolean"
+        default: false
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/NameSearchResult"
+  /api/getNameByTaxonID:
+    get:
+      tags:
+      - "Taxonomy search"
+      summary: "Get the taxon scientific name by taxon identifier."
+      description: ""
+      operationId: "getName"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "taxonID"
+        in: "query"
+        description: "The unique taxon identifier"
+        required: true
+        type: "string"
+        x-example: "https://id.biodiversity.org.au/node/apni/2908670"
+      - name: "follow"
+        in: "query"
+        description: "Follow synonyms to the accepted taxon"
+        required: false
+        type: "boolean"
+        default: false
+      responses:
+        "200":
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "string"
+  /api/check:
+    get:
+      tags:
+      - "Taxonomy search"
+      summary: "Check a name/rank combination and see if it is valid."
+      description: "Returns true if the result is valuid, false if not and null (empty)\
+        \ if unable to check because of an error (usually something like a homonym)"
+      operationId: "check"
+      produces:
+      - "text/plain"
+      parameters:
+      - name: "name"
+        in: "query"
+        description: "The scientific name"
+        required: true
+        type: "string"
+        x-example: "Animalia"
+      - name: "rank"
+        in: "query"
+        description: "The Linnaean rank"
+        required: true
+        type: "string"
+        x-example: "kingdom"
+      responses:
+        "200":
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "boolean"
+        "204":
+          description: "Unable to check due to search error"
+  /api/searchByClassification:
+    get:
+      tags:
+      - "Taxonomy search"
+      summary: "Search by full classification via query parameters"
+      description: "Search based on a partially filled out classification. The search\
+        \ will use the parameters supplied to perform as precise a search as is possible."
+      operationId: "match_1"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "scientificName"
+        in: "query"
+        description: "The scientific name. If not supplied, inferred from other parameters"
+        required: false
+        type: "string"
+        x-example: "Dentimitrella austrina"
+      - name: "kingdom"
+        in: "query"
+        description: "The kingdom name"
+        required: false
+        type: "string"
+        x-example: "Animalia"
+      - name: "phylum"
+        in: "query"
+        description: "The phylum name"
+        required: false
+        type: "string"
+      - name: "class"
+        in: "query"
+        description: "The class name"
+        required: false
+        type: "string"
+      - name: "order"
+        in: "query"
+        description: "The order name"
+        required: false
+        type: "string"
+      - name: "family"
+        in: "query"
+        description: "The family name"
+        required: false
+        type: "string"
+        x-example: "Columbellidae"
+      - name: "genus"
+        in: "query"
+        description: "The genus name"
+        required: false
+        type: "string"
+      - name: "specificEpithet"
+        in: "query"
+        description: "The specific epithet, the species part of a binomial name"
+        required: false
+        type: "string"
+      - name: "infraspecificEpithet"
+        in: "query"
+        description: "The below species (subspecies, variety, form etc.) epithet"
+        required: false
+        type: "string"
+      - name: "rank"
+        in: "query"
+        description: "The taxon rank. If not supplied, it may be inferred from other\
+          \ parameters"
+        required: false
+        type: "string"
+        x-example: "species"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/NameSearchResult"
+    post:
+      tags:
+      - "Taxonomy search"
+      summary: "Search by full classification"
+      description: "Search based on a partially filled out classification. The search\
+        \ will use the parameters contained in the body to perform as precise a search\
+        \ as is possible."
+      operationId: "match"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/SearchParameters"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/NameSearchResult"
+  /api/search:
+    get:
+      tags:
+      - "Taxonomy search"
+      summary: "Search by name"
+      description: "A simple search based only on scientific name. The search will\
+        \ not be able to resolve complications, such as homonyms."
+      operationId: "match_2"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "q"
+        in: "query"
+        description: "The scientific name"
+        required: true
+        type: "string"
+        x-example: "Acacia dealbata"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/NameSearchResult"
+  /api/getAllByTaxonID:
+    post:
+      tags:
+      - "Taxonomy search"
+      summary: "Get bulk taxon information by a list of taxon identifiers."
+      description: ""
+      operationId: "getAll"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "taxonIDs"
+        in: "query"
+        description: "The list of unique taxon identifiers"
+        required: true
+        type: "array"
+        items:
+          type: "string"
+        collectionFormat: "multi"
+        x-example: "https://id.biodiversity.org.au/node/apni/2908670"
+      - name: "follow"
+        in: "query"
+        description: "Follow synonyms to the accepted taxon"
+        required: false
+        type: "boolean"
+        default: false
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/NameSearchResult"
+  /api/searchAllByClassification:
+    post:
+      tags:
+      - "Taxonomy search"
+      summary: "Bulk search by full classification"
+      description: "Search based on a list of partially filled out classifications.\
+        \ The result is a list of matches. Nulls are allowed in the list of searches.\
+        \ If a null is present, then no search is conducted and a null returned. This\
+        \ allows a client to send a partially cached list of requests to the server\
+        \ and just get matches on the specific elements needed."
+      operationId: "matchAll"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          type: "array"
+          items:
+            $ref: "#/definitions/SearchParameters"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/NameSearchResult"
+  /api/searchByVernacularName:
+    get:
+      tags:
+      - "Taxonomy search"
+      summary: "Get taxon information by by vernacular (common) name."
+      description: "The same Vernacular name may be given to multiple taxa with different\
+        \ scientific names. The result returned is a best-effort match."
+      operationId: "matchVernacular"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "vernacularName"
+        in: "query"
+        description: "The common name"
+        required: true
+        type: "string"
+        x-example: "Red Kangaroo"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/NameSearchResult"
+  /api/getAllNamesByTaxonID:
+    post:
+      tags:
+      - "Taxonomy search"
+      summary: "Get bulk taxon scientific names from a list of taxon identifiers."
+      description: ""
+      operationId: "getAllNames"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "taxonIDs"
+        in: "query"
+        description: "The list of unique taxon identifiers"
+        required: true
+        type: "array"
+        items:
+          type: "string"
+        collectionFormat: "multi"
+        x-example: "https://id.biodiversity.org.au/node/apni/2908670"
+      - name: "follow"
+        in: "query"
+        description: "Follow synonyms to the accepted taxon"
+        required: false
+        type: "boolean"
+        default: false
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+  /api/autocomplete:
+    get:
+      tags:
+      - "Taxonomy search"
+      summary: "Autocomplete search with the beginning of a scientific or common name."
+      description: "Returns a list of matches. Up to 2 * max matches are returned."
+      operationId: "autocomplete"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "q"
+        in: "query"
+        description: "The query"
+        required: true
+        type: "string"
+        x-example: "eucalypt"
+      - name: "max"
+        in: "query"
+        description: "Maximum results to return"
+        required: false
+        type: "integer"
+        default: 10
+        format: "int32"
+      - name: "includeSynonyms"
+        in: "query"
+        description: "Include synonyms"
+        required: false
+        type: "boolean"
+        default: true
+      responses:
+        "200":
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: "object"
+                  additionalProperties:
+                    type: "object"
+  /api/searchForLsidById:
+    get:
+      tags:
+      - "Taxonomy search"
+      summary: "Search for an LSID by ID"
+      description: ""
+      operationId: "searchForLsidById"
+      produces:
+      - "text/plain"
+      parameters:
+      - name: "id"
+        in: "query"
+        description: "The ID"
+        required: true
+        type: "string"
+        x-example: "https://id.biodiversity.org.au/node/apni/2908670"
+      responses:
+        "200":
+          description: "successful operation"
+          content:
+            application/json:          
+              schema:
+                type: "string"
+  /api/searchForLSID:
+    get:
+      tags:
+      - "Taxonomy search"
+      summary: "Search for an LSID with a scientific name."
+      description: ""
+      operationId: "searchForLSID"
+      produces:
+      - "text/plain"
+      parameters:
+      - name: "name"
+        in: "query"
+        description: "The name"
+        required: true
+        type: "string"
+        x-example: "Acacia dealbata"
+      responses:
+        "200":
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "string"
+  /api/getGuidsForTaxa:
+    post:
+      tags:
+      - "Taxonomy search"
+      summary: "Search for a list of LSIDs with a list of scientificName or scientificName(kingdom)."
+      description: ""
+      operationId: "getGuidsForTaxa"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          type: "array"
+          items:
+            type: "string"
+      responses:
+        "200":
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+  /api/getCommonNamesForLSID:
+    get:
+      tags:
+      - "Taxonomy search"
+      summary: "Get taxon information by by vernacular (common) name."
+      description: "The same Vernacular name may be given to multiple taxa with different\
+        \ scientific names. The result returned is a best-effort match."
+      operationId: "getCommonNamesForLSID"
+      # produces:
+      # - "application/json"
+      parameters:
+      - name: "lsid"
+        in: "query"
+        description: "lsid"
+        required: true
+        type: "string"
+        x-example: "Red Kangaroo"
+      - name: "max"
+        in: "query"
+        description: "max"
+        required: true
+        type: "integer"
+        format: "int32"
+        x-example: 10
+      responses:
+        "200":
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+                uniqueItems: true
+definitions:
+  NameSearchResult:
+    type: "object"
+    properties:
+      success:
+        type: "boolean"
+        description: "Found/not found flag. A not-found result may be because the\
+          \ query is ambigious"
+      scientificName:
+        type: "string"
+        # example: "Anas superciliosa superciliosa"
+        description: "The scientific name"
+        allowEmptyValue: true
+      scientificNameAuthorship:
+        type: "string"
+        # example: "Gmelin, 1789"
+        description: "The scientific name authorship (with the scientific name, corresponds\
+          \ to the taxon concept)"
+        allowEmptyValue: true
+      taxonConceptID:
+        type: "string"
+        # example: "urn:lsid:biodiversity.org.au:afd.taxon:7d8e4927-90d6-40ba-a1e9-d6e917d2270b"
+        description: "The taxon concept identifier (placement in a taxonomy)"
+        allowEmptyValue: true
+      rank:
+        type: "string"
+        # example: "subspecies"
+        description: "The Linnaean rank (kingdom, family, species, etc.) of the taxon"
+        allowEmptyValue: true
+      rankID:
+        type: "integer"
+        format: "int32"
+        # example: 8000
+        description: "The identifier for the Linnaean rank"
+        allowEmptyValue: true
+      lft:
+        type: "integer"
+        format: "int32"
+        # example: 892340
+        description: "The left-value for the position of this taxon in the taxonomic\
+          \ tree"
+        allowEmptyValue: true
+      rgt:
+        type: "integer"
+        format: "int32"
+        # example: 892345
+        description: "The right-value for the position of this taxon in the taxonomic\
+          \ tree"
+        allowEmptyValue: true
+      matchType:
+        type: "string"
+        # example: "fuzzyMatch"
+        description: "The type of taxon match"
+        allowEmptyValue: true
+        enum:
+        - "exactMatch"
+        - "canonicalMatch"
+        - "phraseMatch"
+        - "fuzzyMatch"
+        - "vernacularMatch"
+        - "higherMatch"
+        - "taxonIdMatch"
+      nameType:
+        type: "string"
+        # example: "SCIENTIFIC"
+        description: "The type of supplied name"
+        allowEmptyValue: true
+        enum:
+        - "SCIENTIFIC"
+        - "VIRUS"
+        - "HYBRID"
+        - "INFORMAL"
+        - "CULTIVAR"
+        - "CANDIDATUS"
+        - "OTU"
+        - "DOUBTFUL"
+        - "PLACEHOLDER"
+        - "NO_NAME"
+      synonymType:
+        type: "string"
+        # example: "SUBJECTIVE_SYNONYM"
+        description: "The type of synonymy, if the supplied name was a synonym of\
+          \ the matched name"
+        allowEmptyValue: true
+      kingdom:
+        type: "string"
+        # example: "Animalia"
+        description: "The Linnaean kingdom"
+        allowEmptyValue: true
+      kingdomID:
+        type: "string"
+        # example: "urn:lsid:biodiversity.org.au:afd.taxon:4647863b-760d-4b59-aaa1-502c8cdf8d3c"
+        description: "The kingdom identifier"
+        allowEmptyValue: true
+      phylum:
+        type: "string"
+        # example: "Chordata"
+        description: "The Linnaean phylum"
+        allowEmptyValue: true
+      phylumID:
+        type: "string"
+        description: "The phylum identifier"
+        allowEmptyValue: true
+      classs:
+        type: "string"
+        # example: "Aves"
+        description: "The Linnaean class"
+        allowEmptyValue: true
+      classID:
+        type: "string"
+        description: "The class identifier"
+        allowEmptyValue: true
+      order:
+        type: "string"
+        # example: "Anseriformes"
+        description: "The Linnaean order"
+        allowEmptyValue: true
+      orderID:
+        type: "string"
+        description: "The order identifier"
+        allowEmptyValue: true
+      family:
+        type: "string"
+        # example: "Anatidae"
+        description: "The Linnaean family"
+        allowEmptyValue: true
+      familyID:
+        type: "string"
+        description: "The family identifier"
+        allowEmptyValue: true
+      genus:
+        type: "string"
+        # example: "Anas"
+        description: "The Linnaean genus"
+        allowEmptyValue: true
+      genusID:
+        type: "string"
+        description: "The genus identifier"
+        allowEmptyValue: true
+      species:
+        type: "string"
+        # example: "Osphranter rufus"
+        description: "The species name"
+        allowEmptyValue: true
+      speciesID:
+        type: "string"
+        description: "The species identifier"
+        allowEmptyValue: true
+      vernacularName:
+        type: "string"
+        # example: "Red Kangaroo"
+        description: "The main vernacular (common) name"
+        allowEmptyValue: true
+      speciesGroup:
+        type: "array"
+        # example: "Animals, Mammals"
+        description: "Species groups for the taxon"
+        allowEmptyValue: true
+        items:
+          type: "string"
+      speciesSubgroup:
+        type: "array"
+        # example: "Herbivorous Marsupials"
+        description: "Species sub-groups for the taxon"
+        allowEmptyValue: true
+        items:
+          type: "string"
+      issues:
+        type: "array"
+        # example: "homonym, misappliedName"
+        description: "Any issues with the matching process. A successful match will\
+          \ return noMatch. Otherwise a list of problems or possible problems with\
+          \ the match"
+        allowEmptyValue: true
+        items:
+          type: "string"
+    description: "A matching taxon (or not) from a search."
+  SearchParameters:
+    type: "object"
+    properties:
+      kingdom:
+        type: "string"
+        # example: "Animalia"
+        description: "The Linnaean kingdom"
+      phylum:
+        type: "string"
+        # example: "Chordata"
+        description: "The Linnaean phylum"
+      clazz:
+        type: "string"
+        # example: "Aves"
+        description: "The Linnaean class"
+      order:
+        type: "string"
+        # example: "Anseriformes"
+        description: "The Linnaean order"
+      family:
+        type: "string"
+        # example: "Anatidae"
+        description: "The Linnaean family"
+      genus:
+        type: "string"
+        # example: "Anas"
+        description: "The Linnaean genus"
+      specificEpithet:
+        type: "string"
+        # example: "superciliosa"
+        description: "The species part of a Linnaean binomial name"
+      infraspecificEpithet:
+        type: "string"
+        # example: "superciliosa"
+        description: "The below-species (subspecies, variety, form etc.) part of a\
+          \ Linnaean binomial name"
+      rank:
+        type: "string"
+        # example: "subspecies"
+        description: "The Linnaean rank of the expected result"
+      verbatimTaxonRank:
+        type: "string"
+        # example: "SubSpecies"
+        description: "The Linnaean rank of the expected result, as supplied"
+      taxonConceptID:
+        type: "string"
+        # example: "urn:lsid:biodiversity.org.au:afd.taxon:7d8e4927-90d6-40ba-a1e9-d6e917d2270b"
+        description: "The expected taxon concept (placement in a taxonomy)"
+      taxonID:
+        type: "string"
+        # example: "urn:lsid:biodiversity.org.au:afd.taxon:7d8e4927-90d6-40ba-a1e9-d6e917d2270b"
+        description: "The expected taxon identifier"
+      scientificNameAuthorship:
+        type: "string"
+        # example: "Gmelin, 1789"
+        description: "The scientific name authorship (with the scientific name, corresponds\
+          \ to the taxon concept)"
+      scientificName:
+        type: "string"
+        # example: "Anas superciliosa superciliosa"
+        description: "The scientific name"
+      vernacularName:
+        type: "string"
+        # example: "Grey Duck"
+        description: "The vernacular name"
+      hints:
+        type: "object"
+        # example: "{ \"kingdom\": [ \"Plantae\", \"Fungi\" }"
+        description: "Taxonomic hints. A map of Linnaean rank names onto possible\
+          \ values if there is difficulty looking up a name. This also acts as a sanity\
+          \ check on the returned results."
+        additionalProperties:
+          type: "array"
+          items:
+            type: "string"
+      loose:
+        type: "boolean"
+        description: "Allow a loose search. Loose searches will treat the scientific\
+          \ name as a vernacular name or a taxon identifier if the name cannot be\
+          \ found."
+    description: "A set of parameters that can be used to search for taxa. The various\
+      \ entries, kingdom etc., refer to names in the Linnaean hierarchy. The only\
+      \ strictly required thing is some sort of scientific name. However, the name\
+      \ can (sometimes) be deduced from other information if not given."
